@@ -1,0 +1,97 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<!--
+<script src="../static-scripts/fbapp.js"></script>
+<script src="../static-scripts/fbauth.js"></script>
+<script src="../static-scripts/fbdatabase.js"></script>
+<script src="../static-scripts/fbmessaging.js"></script>
+<script src="../static-scripts/fbstorage.js"></script>
+
+<script src="../static-scripts/fbinit.js"></script>
+-->
+<script src="../static-scripts/dataMixin.js"></script>
+<script src="../static-scripts/dataConfig.js"></script>
+<dom-module id="dd-factory-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+        background: lightgray;
+        color: rgba(0, 0, 0, 0.87);
+        font-family: Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      @media (max-width: 600px) {
+        :host {
+          margin-top: 0;
+          background: lightgray;
+          box-shadow: none;
+        }
+        :host {
+          border-top: 16px solid #ffa100;
+        }
+      }
+    </style>
+    <div id="message">
+      <h2>Hello to dd-factory [[user.name]] ([[user.nbDinde]])</h2>
+      <div>
+        <template is="dom-repeat" items="[[dindes]]" mutable-data>
+          <div>
+            <div>[[item.name]]</div>
+            <div>[[item.valeur]]</div>
+          </div>
+        </template>
+      </div>
+  </template>
+  <script>
+    /**
+               * @customElement
+               * @polymer
+               */
+    class ddFactoryApp extends Polymer.Element {
+      static get is() { return 'dd-factory-app'; }
+      static get properties() {
+        return {
+          dindes: {
+            type: Array
+          },
+          user: {
+            type: Object
+          },
+          userId: {
+            type: String,
+            value:0
+          }
+        };
+      }
+
+      constructor() {
+        super();
+      }
+
+      static get observers() {
+        return ['_userChanged(userId)'];
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registered!', reg))
+          .catch(err => console.log('Boo!', err, arguments));
+        dataVault.ref("dindes").onValue(value => { this.dindes = value })
+        dataVault.ref("user").onValue(value=>{this.user = value})
+      }
+
+      _userChanged(){
+        dataVault.ref("user").setParams({
+          userId:this.userId
+        })
+      }
+    }
+
+    window.customElements.define(ddFactoryApp.is, ddFactoryApp);
+
+  </script>
+</dom-module>

@@ -1,0 +1,7 @@
+{
+  "name": "dd-factory",
+  "short_name": "ddf",
+  "description": "eleve des dindes",
+  "start_url": "/",
+  "display": "standalone"
+}
