@@ -1,0 +1,59 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+
+<!--
+<script src="../static-scripts/fbapp.js"></script>
+<script src="../static-scripts/fbauth.js"></script>
+<script src="../static-scripts/fbdatabase.js"></script>
+<script src="../static-scripts/fbmessaging.js"></script>
+<script src="../static-scripts/fbstorage.js"></script>
+
+<script src="../static-scripts/fbinit.js"></script>
+-->
+<dom-module id="dd-factory-dinde">
+    <template>
+        <style>
+        </style>
+        <div>
+            <div>[[dinde.name]]</div>
+            <div>[[dinde.valeur]]</div>
+        </div>
+    </template>
+    <script>
+        /**
+                   * @customElement
+                   * @polymer
+                   */
+        class ddFactoryDinde extends Polymer.Element {
+            static get is() { return 'dd-factory-dinde'; }
+            static get properties() {
+                return {
+                    dindeId: {
+                        type: String
+                    },
+                    dinde:{
+                        type:Object
+                    }
+                };
+            }
+
+            constructor() {
+                super();
+            }
+
+            static get observers() {
+                return ['_dindeIdChanged(dindeId)'];
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+            }
+
+            _dindeIdChanged(newId, oldId) {
+                dataVault.ref("dinde").getRefForParams(this.dindeId).onValue(value => { this.dinde = value })
+            }
+        }
+
+        window.customElements.define(ddFactoryDinde.is, ddFactoryDinde);
+
+    </script>
+</dom-module>

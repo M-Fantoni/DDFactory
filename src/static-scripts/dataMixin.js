@@ -1,25 +1,25 @@
 class DataVault {
-        constructor() {
-            this.sourceType = {}
-        }
+    constructor() {
+        this.sourceType = {}
+    }
 
-        registerSourceType(sourceType, name){
-            this.sourceType[name] = sourceType;
-        }
+    registerSourceType(sourceType, name) {
+        this.sourceType[name] = sourceType;
+    }
 
-        init(config){
-            console.log('init called')
-            let refs = {}
-            for(let ref of config){
-                refs[ref.name] = new this.sourceType[ref.type](ref.config);
-            }
-            this.refs = refs;
+    init(config) {
+        console.log('init called')
+        let refs = {}
+        for (let ref of config) {
+            refs[ref.name] = new this.sourceType[ref.type](ref.config);
         }
+        this.refs = refs;
+    }
 
-        ref(ref){
-            console.log("ref called : ", ref)
-            return this.refs[ref]
-        }
+    ref(ref) {
+        console.log("ref called : ", ref)
+        return this.refs[ref]
+    }
 }
 
 dataVault = new DataVault();
@@ -42,7 +42,7 @@ class DataSource {
     }
 
     newData(data) {
-        if(JSON.stringify(data) !== JSON.stringify(this.data)){
+        if (JSON.stringify(data) !== JSON.stringify(this.data)) {
             for (let callBack of this.callBacks) {
                 callBack(data);
             }
@@ -51,9 +51,9 @@ class DataSource {
     }
 }
 
-class JsonDataSource extends DataSource{
+class JsonDataSource extends DataSource {
 
-    static get type(){
+    static get type() {
         return 'jsonDataSource'
     }
 
@@ -112,9 +112,9 @@ class JsonDataSource extends DataSource{
 }
 dataVault.registerSourceType(JsonDataSource, JsonDataSource.type)
 
-class JsonParametrableDataSource extends JsonDataSource{
+class JsonParametrableDataSource extends JsonDataSource {
 
-    static get type(){
+    static get type() {
         return 'jsonParametrableDataSource'
     }
 
@@ -123,9 +123,9 @@ class JsonParametrableDataSource extends JsonDataSource{
         this.locked = true;
     }
 
-    setParams(args){
+    setParams(args) {
         let url = this.config.baseUrl;
-        for(let arg in args){
+        for (let arg in args) {
             url = url.replace(arg, args[arg])
         }
         this.config.url = url;
@@ -134,3 +134,45 @@ class JsonParametrableDataSource extends JsonDataSource{
     }
 }
 dataVault.registerSourceType(JsonParametrableDataSource, JsonParametrableDataSource.type)
+
+class MultiRefParam {
+
+    static get type() {
+        return 'multiRefParam'
+    }
+
+    constructor(config) {
+        this.config = config;
+        this.refs = {};
+    }
+
+    registerSourceType(sourceType, name) {
+        this.sourceType[name] = sourceType;
+    }
+
+    getRefForParams(...args) {
+        let hash = args.join(':')
+        if (!this.refs[hash]){
+            let url = this.config.baseUrl
+            for (let arg of args) {
+                url = url.replace("param", arg)
+            }
+            let config = Object.assign({}, this.config)
+            config.url = url;
+            this.refs[hash] = new MultiRefParam.parametredJsonDataSource(config)
+        }
+        return this.refs[hash];
+    }
+
+    ref(ref) {
+        return this.refs[ref]
+    }
+
+    static get parametredJsonDataSource() {
+        return class ParametredJsonDataSource extends JsonDataSource {
+
+        }
+    }
+}
+
+dataVault.registerSourceType(MultiRefParam, MultiRefParam.type)

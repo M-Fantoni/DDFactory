@@ -13,7 +13,17 @@ dataVault.init([
         name:"dindes",
         type: "jsonDataSource",
         config:{
-            url:"https://dragodindefactory.firebaseio.com/dindes.json"
+            url:"https://dragodindefactory.firebaseio.com/dindes.json?shallow=true"
+        },
+        layers:[
+
+        ]
+    },
+    {
+        name:"dinde",
+        type: "multiRefParam",
+        config:{
+            baseUrl:"https://dragodindefactory.firebaseio.com/dindes/param.json"
         },
         layers:[
 

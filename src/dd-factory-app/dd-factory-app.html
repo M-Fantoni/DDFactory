@@ -1,4 +1,6 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="dd-factory-dinde.html">
 
 <!--
 <script src="../static-scripts/fbapp.js"></script>
@@ -36,14 +38,16 @@
     </style>
     <div id="message">
       <h2>Hello to dd-factory [[user.name]] ([[user.nbDinde]])</h2>
+      <h4>Liste des dindes : </h2>
       <div>
-        <template is="dom-repeat" items="[[dindes]]" mutable-data>
-          <div>
-            <div>[[item.name]]</div>
-            <div>[[item.valeur]]</div>
-          </div>
-        </template>
+        <dd-factory-dinde dinde-id="0">
+        </dd-factory-dinde>
+        <dd-factory-dinde dinde-id="1">
+        </dd-factory-dinde>
+        <dd-factory-dinde dinde-id="2">
+        </dd-factory-dinde>
       </div>
+    </div>
   </template>
   <script>
     /**
@@ -62,7 +66,7 @@
           },
           userId: {
             type: String,
-            value:0
+            value:1
           }
         };
       }
@@ -80,7 +84,7 @@
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('SW registered!', reg))
           .catch(err => console.log('Boo!', err, arguments));
-        dataVault.ref("dindes").onValue(value => { this.dindes = value })
+        dataVault.ref("dindes").onValue(value => { this.dindes = value ; console.log("dindes : ", value)})
         dataVault.ref("user").onValue(value=>{this.user = value})
       }
 
