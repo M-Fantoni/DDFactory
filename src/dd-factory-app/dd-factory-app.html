@@ -40,12 +40,10 @@
       <h2>Hello to dd-factory [[user.name]] ([[user.nbDinde]])</h2>
       <h4>Liste des dindes : </h2>
       <div>
-        <dd-factory-dinde dinde-id="0">
-        </dd-factory-dinde>
-        <dd-factory-dinde dinde-id="1">
-        </dd-factory-dinde>
-        <dd-factory-dinde dinde-id="2">
-        </dd-factory-dinde>
+          <template is="dom-repeat" items="{{dindes}}">
+              <dd-factory-dinde dinde-id="[[item]]">
+                </dd-factory-dinde>
+          </template>
       </div>
     </div>
   </template>
@@ -81,14 +79,19 @@
 
       connectedCallback() {
         super.connectedCallback();
+
+        //install service worker
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('SW registered!', reg))
           .catch(err => console.log('Boo!', err, arguments));
-        dataVault.ref("dindes").onValue(value => { this.dindes = value ; console.log("dindes : ", value)})
+
+        //
+        dataVault.ref("dindes").onValue(value => { this.dindes = value})
         dataVault.ref("user").onValue(value=>{this.user = value})
       }
 
       _userChanged(){
+        console.log("pouet pouet")
         dataVault.ref("user").setParams({
           userId:this.userId
         })

@@ -1,17 +1,22 @@
 class DataVault {
     constructor() {
-        this.sourceType = {}
+        this.sourceTypes = {}
+        this.layers = {}
     }
 
     registerSourceType(sourceType, name) {
-        this.sourceType[name] = sourceType;
+        this.sourceTypes[name] = sourceType;
+    }
+
+    registerLayer(layer, name) {
+        this.layers[name] = new layer();
     }
 
     init(config) {
         console.log('init called')
         let refs = {}
         for (let ref of config) {
-            refs[ref.name] = new this.sourceType[ref.type](ref.config);
+            refs[ref.name] = new this.sourceTypes[ref.type](ref.name, ref.config, this.layers);
         }
         this.refs = refs;
     }
@@ -27,8 +32,10 @@ dataVault = new DataVault();
 
 class DataSource {
 
-    constructor(config) {
+    constructor(name, config, layers) {
+        this.name = name;
         this.config = config;
+        this.layers = layers;
         this.callBacks = []
     }
 
@@ -42,12 +49,26 @@ class DataSource {
     }
 
     newData(data) {
-        if (JSON.stringify(data) !== JSON.stringify(this.data)) {
+        let stringifiedData = JSON.stringify(this.data);
+        
+        if (JSON.stringify(data) !== this.stringifiedData) {
+            this.stringifiedData = stringifiedData;
+            for(let layer of this.config.layers){
+                data = this.layers[layer].preNewData(data, this.name);
+            }
             for (let callBack of this.callBacks) {
                 callBack(data);
             }
             this.data = data;
         }
+    }
+
+    save(data){
+        for(let layer of this.config.layers){
+            data = this.layers[layer].preSave(data, this.name);
+        }
+        this.newData(data);
+        this.setData(data);
     }
 }
 
@@ -118,8 +139,8 @@ class JsonParametrableDataSource extends JsonDataSource {
         return 'jsonParametrableDataSource'
     }
 
-    constructor(config) {
-        super(config);
+    constructor(name, config, layers) {
+        super(name, config, layers);
         this.locked = true;
     }
 
@@ -141,13 +162,11 @@ class MultiRefParam {
         return 'multiRefParam'
     }
 
-    constructor(config) {
+    constructor(name, config, layers) {
+        this.name = name;
         this.config = config;
+        this.layers = layers
         this.refs = {};
-    }
-
-    registerSourceType(sourceType, name) {
-        this.sourceType[name] = sourceType;
     }
 
     getRefForParams(...args) {
@@ -159,7 +178,7 @@ class MultiRefParam {
             }
             let config = Object.assign({}, this.config)
             config.url = url;
-            this.refs[hash] = new MultiRefParam.parametredJsonDataSource(config)
+            this.refs[hash] = new MultiRefParam.parametredJsonDataSource(this.name, config, this.layers)
         }
         return this.refs[hash];
     }
@@ -176,3 +195,40 @@ class MultiRefParam {
 }
 
 dataVault.registerSourceType(MultiRefParam, MultiRefParam.type)
+
+class BaseLayer {
+    preSave(data){ return data }
+    preNewData(data ){ return data }
+}
+
+class ConsoleLayer {
+
+    static get type() {
+        return 'consoleLayer'
+    }
+
+    preSave(data, sourceName){
+        console.log('Source '+sourceName+' saving data : ', data);
+        return data;
+    }
+    preNewData(data, sourceName){
+        console.log('Source '+sourceName+' getting new data : ', data);
+        return data;
+    }
+}
+
+dataVault.registerLayer(ConsoleLayer, ConsoleLayer.type)
+
+class KeyToArrayLayer {
+
+    static get type() {
+        return 'keyToArrayLayer'
+    }
+
+    preNewData(data, sourceName){
+        console.log("tututut pouet")
+        return Object.keys(data);
+    }
+}
+
+dataVault.registerLayer(KeyToArrayLayer, KeyToArrayLayer.type)
