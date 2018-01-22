@@ -93,9 +93,7 @@
 
       _userChanged(){
         //to set params of parametrables sources
-        dataVault.ref("user").setParams({
-          userId:this.userId
-        })
+        dataVault.ref("user").setParams(this.userId)
       }
     }
 

@@ -69,7 +69,7 @@ var exec = require('child_process').exec;
 
 gulp.task('deploy', ['build'], function (cb) {
 
-    var command = 'firebase deploy --token 1/hxoor46p8eMe-Wnm6lVV5rdx3T8vLSWA8-9uCakgPHQ --project ' + options.env;
+    var command = 'firebase deploy --except functions --token 1/hxoor46p8eMe-Wnm6lVV5rdx3T8vLSWA8-9uCakgPHQ --project ' + options.env;
 
     exec(command, function (err, stdout, stderr) {
         console.log(stdout);

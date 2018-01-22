@@ -9,8 +9,9 @@ dataVault.init([
         name:"user",
         type: "jsonParametrableDataSource",
         config:{
-            baseUrl:"https://dragodindefactory.firebaseio.com/users/userId.json",
+            baseUrl:"https://dragodindefactory.firebaseio.com/users/param.json",
             layers:[
+                'simpleOfflineLayer',
                 'consoleLayer'
             ]
         }
@@ -21,6 +22,7 @@ dataVault.init([
         config:{
             url:"https://dragodindefactory.firebaseio.com/dindes.json?shallow=true",
             layers:[
+                'simpleOfflineLayer',
                 'keyToArrayLayer',
                 'consoleLayer'
             ]
@@ -32,6 +34,7 @@ dataVault.init([
         config:{
             baseUrl:"https://dragodindefactory.firebaseio.com/dindes/param.json",
             layers:[
+                'simpleOfflineLayer',
                 'consoleLayer'
             ]
         }

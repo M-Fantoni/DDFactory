@@ -28,9 +28,11 @@ module.exports = {
      * up-to-date data if they have a reliable network connection, but falls back to
      * cached content otherwise.
      */
+    ///*
     {
-      "urlPattern": /^https:\/\/audiostream-89853\.firebaseio\.com\/.*\.json/,
+      "urlPattern": /^https:\/\/dragodindefactory\.firebaseio\.com\/.*\.json/,
       "handler": "networkFirst"
     }
+    //*/
   ]
 };

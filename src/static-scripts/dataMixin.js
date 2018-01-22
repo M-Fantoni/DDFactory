@@ -36,6 +36,7 @@ class DataSource {
         this.name = name;
         this.config = config;
         this.layers = layers;
+        this.stringifiedData = "datavault-noData"
         this.callBacks = []
     }
 
@@ -48,14 +49,23 @@ class DataSource {
             this.getData();
     }
 
-    newData(data) {
-        let stringifiedData = JSON.stringify(this.data);
-        
-        if (JSON.stringify(data) !== this.stringifiedData) {
-            this.stringifiedData = stringifiedData;
-            for(let layer of this.config.layers){
-                data = this.layers[layer].preNewData(data, this.name);
+    async passLayer(etape, data) {
+        for (let layer of this.config.layers) {
+            try{
+                data = await new Promise((res, rej) => { this.layers[layer][etape](res, data, this.name, this.params) });
+            }catch(err){
+                console.error("Layer "+layer+" failed step "+etape+" for datas ", data, err)
             }
+        }
+        return data
+    }
+
+    async newData(data) {
+        let stringifiedData = JSON.stringify(data);
+
+        if (stringifiedData !== this.stringifiedData) {
+            this.stringifiedData = stringifiedData;
+            data = await this.passLayer('postNewData', data)
             for (let callBack of this.callBacks) {
                 callBack(data);
             }
@@ -63,12 +73,10 @@ class DataSource {
         }
     }
 
-    save(data){
-        for(let layer of this.config.layers){
-            data = this.layers[layer].preSave(data, this.name);
-        }
+    async save(data) {
+        data = await this.passLayer('preSave', data)
         this.newData(data);
-        this.setData(data);
+        return this.setData(data);
     }
 }
 
@@ -95,11 +103,13 @@ class JsonDataSource extends DataSource {
                 } else {
                     response.text().then(err => {
                         console.error("Error fetching data from url : ", this.config.url, err);
+                        this.newData(undefined);
                     })
                 }
             })
             .catch(err => {
                 console.error("Error fetching data from url : ", this.config.url, err);
+                this.newData(undefined);
             })
     }
 
@@ -144,12 +154,13 @@ class JsonParametrableDataSource extends JsonDataSource {
         this.locked = true;
     }
 
-    setParams(args) {
+    setParams(...args) {
         let url = this.config.baseUrl;
-        for (let arg in args) {
-            url = url.replace(arg, args[arg])
+        for (let arg of args) {
+            url = url.replace("param", arg)
         }
         this.config.url = url;
+        this.params = args.join(':')
         this.locked = false;
         this.getData();
     }
@@ -171,14 +182,14 @@ class MultiRefParam {
 
     getRefForParams(...args) {
         let hash = args.join(':')
-        if (!this.refs[hash]){
+        if (!this.refs[hash]) {
             let url = this.config.baseUrl
             for (let arg of args) {
                 url = url.replace("param", arg)
             }
             let config = Object.assign({}, this.config)
             config.url = url;
-            this.refs[hash] = new MultiRefParam.parametredJsonDataSource(this.name, config, this.layers)
+            this.refs[hash] = new MultiRefParam.parametredJsonDataSource(this.name + "-" + hash, config, this.layers)
         }
         return this.refs[hash];
     }
@@ -197,8 +208,8 @@ class MultiRefParam {
 dataVault.registerSourceType(MultiRefParam, MultiRefParam.type)
 
 class BaseLayer {
-    preSave(data){ return data }
-    preNewData(data ){ return data }
+    preSave(next, data) { next(data) }
+    postNewData(next, data) { next(data) }
 }
 
 class ConsoleLayer {
@@ -207,13 +218,13 @@ class ConsoleLayer {
         return 'consoleLayer'
     }
 
-    preSave(data, sourceName){
-        console.log('Source '+sourceName+' saving data : ', data);
-        return data;
+    preSave(next, data, sourceName, params) {
+        console.log('Source ' + sourceName + (params ? '-' + params : '') + ' saving data : ', data);
+        next(data)
     }
-    preNewData(data, sourceName){
-        console.log('Source '+sourceName+' getting new data : ', data);
-        return data;
+    postNewData(next, data, sourceName, params) {
+        console.log('Source ' + sourceName + (params ? '-' + params : '') + ' getting new data : ', data);
+        next(data)
     }
 }
 
@@ -225,10 +236,100 @@ class KeyToArrayLayer {
         return 'keyToArrayLayer'
     }
 
-    preNewData(data, sourceName){
-        console.log("tututut pouet")
-        return Object.keys(data);
+    postNewData(next, data, sourceName) {
+        next(Object.keys(data));
     }
 }
 
 dataVault.registerLayer(KeyToArrayLayer, KeyToArrayLayer.type)
+
+class SimpleOfflineLayer {
+
+    static get dbConfig() {
+        return {
+            DB_NAME: 'dataVault-offline',
+            DB_VERSION: 1, // Use a long long for this value (don't use a float)
+            DB_STORE_NAME: 'mirrored-data'
+        }
+    }
+
+    static get type() {
+        return 'simpleOfflineLayer'
+    }
+
+    constructor() {
+        var request = indexedDB.open(SimpleOfflineLayer.dbConfig.DB_NAME, SimpleOfflineLayer.dbConfig.DB_VERSION);
+        request.onerror = event => {
+            console.error("impossible to open the database : " + event.target.errorCode)
+        };
+        request.onupgradeneeded = event => {
+            // Save the IDBDatabase interface 
+            var db = event.target.result;
+
+            // Create an objectStore for this database
+            var objectStore = db.createObjectStore(SimpleOfflineLayer.dbConfig.DB_STORE_NAME);
+            console.log("on upgrade called of offline db")
+        };
+        request.onsuccess = event => {
+            this.db = event.target.result;
+            console.log("connection open to offline db")
+            this.db.onerror = event => {
+                // Generic error handler for all errors targeted at this database's
+                // requests!
+                console.error("Database error: " + event.target.errorCode);
+            };
+        };
+
+        window.addEventListener('online', this.connectionStatus);
+        window.addEventListener('offline', this.connectionStatus);
+    }
+
+    connectionStatus() {
+        this.online = window.navigator.onLine;
+    }
+
+    preSave(next, data, sourceName) {
+        //TODO add a real pending solution
+        if(!this.db)
+            next(data);
+
+        let key = sourceName + (params ? '-' + params : '')
+        let request = this.db.transaction(SimpleOfflineLayer.dbConfig.DB_STORE_NAME, "readwrite").objectStore(SimpleOfflineLayer.dbConfig.DB_STORE_NAME).put(data, key);
+        request.onsuccess = event => {
+            console.log("Data " + key + " saved data : ", data)
+        };
+        request.onerror = function (event) {
+            console.log("Data " + key + " failed saving data : ", data)
+        };
+        next(data);
+    }
+
+    postNewData(next, data, sourceName, params) {
+        //TODO add a real pending solution
+        if(!this.db)
+            next(data);
+
+        
+        let key = sourceName + (params ? '-' + params : '')
+        if (data === undefined && !this.online) {
+            let request = this.db.transaction(SimpleOfflineLayer.dbConfig.DB_STORE_NAME).objectStore(SimpleOfflineLayer.dbConfig.DB_STORE_NAME).get(key);
+            request.onsuccess = event => {
+                next(event.target.result);
+            };
+            request.onerror = event => {
+                next(data);
+            };
+        } else {
+            let request = this.db.transaction(SimpleOfflineLayer.dbConfig.DB_STORE_NAME, "readwrite").objectStore(SimpleOfflineLayer.dbConfig.DB_STORE_NAME).put(data, key);
+            request.onsuccess = event => {
+                console.log("Data " + key + " saved data : ", data)
+            };
+            request.onerror = event => {
+                console.log("Data " + key + " failed saving data : ", data)
+            };
+            next(data);
+        }
+    }
+}
+
+dataVault.registerLayer(SimpleOfflineLayer, SimpleOfflineLayer.type)
