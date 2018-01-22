@@ -1,3 +1,9 @@
+//for the datavault configuration
+//It's an array of data references objects.
+//each one as a name used to call it in the app,
+//a type to determine how it must work
+//and a config for the fine tuning of each type
+
 dataVault.init([
     {
         name:"user",

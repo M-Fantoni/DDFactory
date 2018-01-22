@@ -84,14 +84,15 @@
         navigator.serviceWorker.register('sw.js')
           .then(reg => console.log('SW registered!', reg))
           .catch(err => console.log('Boo!', err, arguments));
-
         //
+
+        //access a dataSource. The method given to the onValue method will be automatically called when a value is available
         dataVault.ref("dindes").onValue(value => { this.dindes = value})
         dataVault.ref("user").onValue(value=>{this.user = value})
       }
 
       _userChanged(){
-        console.log("pouet pouet")
+        //to set params of parametrables sources
         dataVault.ref("user").setParams({
           userId:this.userId
         })
