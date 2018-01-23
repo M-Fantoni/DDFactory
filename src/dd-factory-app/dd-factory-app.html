@@ -16,34 +16,16 @@
 <dom-module id="dd-factory-app">
   <template>
     <style>
-      :host {
-        display: block;
-        background: lightgray;
-        color: rgba(0, 0, 0, 0.87);
-        font-family: Roboto, Helvetica, Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-      }
-
-      @media (max-width: 600px) {
-        :host {
-          margin-top: 0;
-          background: lightgray;
-          box-shadow: none;
-        }
-        :host {
-          border-top: 16px solid #ffa100;
-        }
-      }
     </style>
     <div id="message">
       <h2>Hello to dd-factory [[user.name]] ([[user.nbDinde]])</h2>
-      <h4>Liste des dindes : </h2>
       <div>
+          <h4>Liste des dindes : </h2>
           <template is="dom-repeat" items="{{dindes}}">
               <dd-factory-dinde dinde-id="[[item]]">
                 </dd-factory-dinde>
           </template>
+          <paper-button on-tap="addDinde">ajouter</paper-button>
       </div>
     </div>
   </template>

@@ -1,21 +1,65 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
 
-<!--
-<script src="../static-scripts/fbapp.js"></script>
-<script src="../static-scripts/fbauth.js"></script>
-<script src="../static-scripts/fbdatabase.js"></script>
-<script src="../static-scripts/fbmessaging.js"></script>
-<script src="../static-scripts/fbstorage.js"></script>
 
-<script src="../static-scripts/fbinit.js"></script>
--->
 <dom-module id="dd-factory-dinde">
     <template>
         <style>
         </style>
-        <div>
-            <div>[[dinde.name]]</div>
-            <div>[[dinde.valeur]]</div>
+        <div hidden="[[dindeLoaded]]">
+            loading dinde
+        </div>
+        <div hidden="[[!dindeLoaded]]">
+            <div  hidden="[[editMode]]">
+                <div>nom : [[dinde.name]]</div>
+                <div>capacitée : [[dinde.capSpe]]</div>
+                <div>génération : [[dinde.generation]]</div>
+                <div>couleur : [[dinde.couleur]]</div>
+                <div>sexe : [[dinde.sexe]]</div>
+                <div>repro restante : [[dinde.reproLeft]]</div>
+                <div>parent 1 : [[dinde.parent1]]</div>
+                <div>parent 2 : [[dinde.parent2]]</div>
+                <div>nb enfants : [[dinde.enfants.length]]</div>
+                <paper-button on-tap="editDinde">editer</paper-button>
+                <hr>
+            </div>
+            <div hidden="[[!editMode]]">
+                <div>
+                    <label for="nom">nom :</label>
+                    <input type="text" id="nom" value="{{dinde.name}}"/>
+                </div>
+                <div>
+                    <label for="capacite">capacitée :</label>
+                    <input type="text" id="capacite" value="{{dinde.capSpe}}"></input>
+                </div>
+                <div>
+                    <label for="generation">generation :</label>
+                    <input type="number" id="generation" value="{{dinde.generation}}"/>
+                </div>
+                <div>
+                    <label for="nom">couleur :</label>
+                    <input type="text" id="couleur" value="{{dinde.couleur}}"/>
+                </div>
+                <div>
+                    <label for="nom">sexe :</label>
+                    <input type="text" id="sexe" value="{{dinde.sexe}}"/>
+                </div>
+                <div>
+                    <label for="reproLeft">repro restante :</label>
+                    <input type="text" id="reproLeft" value="{{dinde.reproLeft}}"/>
+                </div>
+                <div>
+                    <label for="parent1">parent 1 :</label>
+                    <input type="text" id="parent1" value="{{dinde.parent1}}"/>
+                </div>
+                <div>
+                    <label for="parent2">parent 2 :</label>
+                    <input type="text" id="parent2" value="{{dinde.parent2}}"/>
+                </div>
+                <paper-button on-tap="editDinde">annuler</paper-button><paper-button on-tap="saveDinde">Sauver</paper-button>
+            </div>
         </div>
     </template>
     <script>
@@ -32,6 +76,14 @@
                     },
                     dinde:{
                         type:Object
+                    },
+                    editMode:{
+                        type:Boolean,
+                        value:false
+                    },
+                    dindeLoaded:{
+                        type:Boolean,
+                        value:false
                     }
                 };
             }
@@ -49,7 +101,34 @@
             }
 
             _dindeIdChanged(newId, oldId) {
-                dataVault.ref("dinde").getRefForParams(this.dindeId).onValue(value => { this.dinde = value })
+                this.dindeLoaded = false;
+                if(this.dindeId){
+                    dataVault.ref("dinde").getRefForParams(this.dindeId).onValue(value => { this.dinde = value; this.dindeLoaded = true });
+                }
+            }
+            saveDinde(){
+                if(this.dindeId !== undefined){
+                    
+                    //on recupere manuellement les valeurs du formulaire parce que j'ai utilisé des inputs natif, sinon 
+                    //on aurait pu faire ça directement via binding
+                    //rappel : dans un element this.$ contient chacun des elements ayants un ID
+                    dataVault.ref("dinde").getRefForParams(this.dindeId).save({
+                        name:this.$.nom.value,
+                        capSpe:this.$.capacite.value,
+                        generation:this.$.generation.value,
+                        couleur:this.$.couleur.value,
+                        sexe:this.$.sexe.value,
+                        reproLeft:this.$.reproLeft.value,
+                        parent1:this.$.parent1.value,
+                        parent2:this.$.parent2.value,
+                    })
+                    this.editMode = false;
+                }else{
+                    console.error("trying to save unvailable dinde : ", this.dindeId)
+                }
+            }
+            editDinde(){
+                this.editMode = !this.editMode;
             }
         }
 

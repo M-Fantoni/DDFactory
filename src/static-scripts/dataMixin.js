@@ -288,7 +288,7 @@ class SimpleOfflineLayer {
         this.online = window.navigator.onLine;
     }
 
-    preSave(next, data, sourceName) {
+    preSave(next, data, sourceName, params) {
         //TODO add a real pending solution
         if(!this.db)
             next(data);
